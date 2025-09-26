@@ -80,25 +80,70 @@ const TaskCard = ({ task }: TaskCardProps) => {
     }
   };
 
-  const handleToggleComplete = () => {
-    toast({
-      title: "Demo Mode",
-      description: "Conecte o Supabase para atualizar status das tarefas",
-    });
+  const handleToggleComplete = async () => {
+    // TODO: Replace with your API call
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ completed: !task.completed }),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Tarefa atualizada",
+          description: task.completed ? "Tarefa marcada como pendente" : "Tarefa concluída!",
+        });
+        // Refresh the page or update local state
+        window.location.reload();
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a tarefa",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEdit = () => {
+    // TODO: Implement edit modal or redirect to edit page
     toast({
-      title: "Demo Mode", 
-      description: "Conecte o Supabase para editar tarefas",
+      title: "Em desenvolvimento",
+      description: "Funcionalidade de edição será implementada",
     });
   };
 
-  const handleDelete = () => {
-    toast({
-      title: "Demo Mode",
-      description: "Conecte o Supabase para excluir tarefas",
-    });
+  const handleDelete = async () => {
+    if (!confirm("Tem certeza que deseja excluir esta tarefa?")) return;
+    
+    // TODO: Replace with your API call
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Tarefa excluída",
+          description: "A tarefa foi removida com sucesso",
+        });
+        // Refresh the page or update local state
+        window.location.reload();
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a tarefa",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -18,20 +18,54 @@ const Register = () => {
   });
   const { toast } = useToast();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Erro",
+        title: "Erro de validação",
         description: "As senhas não coincidem",
         variant: "destructive",
       });
       return;
     }
-    toast({
-      title: "Demo Mode",
-      description: "Conecte o Supabase para funcionalidade completa de cadastro",
-    });
+    
+    // TODO: Replace with your API call
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          name: formData.name, 
+          email: formData.email, 
+          password: formData.password 
+        }),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Cadastro realizado com sucesso!",
+          description: "Você já pode fazer login",
+        });
+        // Redirect to login
+        window.location.href = '/login';
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Erro no cadastro",
+          description: error.message || "Erro interno do servidor",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {

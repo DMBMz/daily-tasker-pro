@@ -73,25 +73,55 @@ const Admin = () => {
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
+    // TODO: Implement add user modal or redirect to add user page
     toast({
-      title: "Demo Mode",
-      description: "Conecte o Supabase para adicionar usuários reais",
+      title: "Em desenvolvimento",
+      description: "Funcionalidade de adicionar usuário será implementada",
     });
   };
 
-  const handleEditUser = (userId: string) => {
+  const handleEditUser = async (userId: string) => {
+    // TODO: Implement edit user modal or redirect to edit user page
     toast({
-      title: "Demo Mode",
-      description: "Conecte o Supabase para editar usuários",
+      title: "Em desenvolvimento",
+      description: "Funcionalidade de edição será implementada",
     });
   };
 
-  const handleDeleteUser = (userId: string) => {
-    toast({
-      title: "Demo Mode", 
-      description: "Conecte o Supabase para excluir usuários",
-    });
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
+    
+    // TODO: Replace with your API call
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Usuário excluído",
+          description: "O usuário foi removido com sucesso",
+        });
+        // Refresh the page or update local state
+        window.location.reload();
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível excluir o usuário",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor",
+        variant: "destructive",
+      });
+    }
   };
 
   const getRoleIcon = (role: string) => {

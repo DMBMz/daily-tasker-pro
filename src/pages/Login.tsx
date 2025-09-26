@@ -13,12 +13,40 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Demo Mode",
-      description: "Conecte o Supabase para funcionalidade completa de login",
-    });
+    
+    // TODO: Replace with your API call
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.token);
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Redirecionando para o dashboard...",
+        });
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+      } else {
+        toast({
+          title: "Erro no login",
+          description: "Email ou senha incorretos",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor",
+      });
+    }
   };
 
   return (

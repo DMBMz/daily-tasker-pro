@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Plus, 
   Calendar, 
@@ -23,58 +24,82 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import TaskCard from "@/components/TaskCard";
+import TaskForm from "@/components/TaskForm";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
-// Mock data - será substituído pela integração com Supabase
-const mockTasks = [
-  {
-    id: "1",
-    title: "Revisar relatório mensal",
-    description: "Analisar os dados de performance do último mês e preparar apresentação",
-    dueDate: "2024-09-25",
-    priority: "high" as const,
-    completed: false,
-  },
-  {
-    id: "2", 
-    title: "Reunião com equipe",
-    description: "Weekly sync com a equipe de desenvolvimento",
-    dueDate: "2024-09-24",
-    priority: "medium" as const,
-    completed: false,
-  },
-  {
-    id: "3",
-    title: "Atualizar documentação",
-    description: "Revisar e atualizar a documentação do projeto",
-    dueDate: "2024-09-26",
-    priority: "low" as const,
-    completed: true,
-  },
-];
-
 const Dashboard = () => {
-  const [tasks] = useState(mockTasks);
+  const [tasks, setTasks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showTaskForm, setShowTaskForm] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Fetch tasks from API
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+  
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch('/api/tasks', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data);
+      } else {
+        // Fallback to mock data for development
+        setTasks([
+          {
+            id: "1",
+            title: "Revisar relatório mensal",
+            description: "Analisar os dados de performance do último mês e preparar apresentação",
+            dueDate: "2024-09-25",
+            priority: "high" as const,
+            completed: false,
+          },
+          {
+            id: "2", 
+            title: "Reunião com equipe", 
+            description: "Weekly sync com a equipe de desenvolvimento",
+            dueDate: "2024-09-24",
+            priority: "medium" as const,
+            completed: false,
+          },
+          {
+            id: "3",
+            title: "Atualizar documentação",
+            description: "Revisar e atualizar a documentação do projeto",
+            dueDate: "2024-09-26",
+            priority: "low" as const,
+            completed: true,
+
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      // Keep mock data for development
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const pendingTasks = tasks.filter(task => !task.completed);
   const completedTasks = tasks.filter(task => task.completed);
   const highPriorityTasks = tasks.filter(task => task.priority === "high" && !task.completed);
 
-  const handleAddTask = () => {
-    toast({
-      title: "Demo Mode",
-      description: "Conecte o Supabase para adicionar tarefas reais",
-    });
-  };
-
   const handleLogout = () => {
+    localStorage.removeItem('token');
     toast({
-      title: "Demo Mode", 
-      description: "Funcionalidade de logout será ativada com Supabase",
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso",
     });
+    window.location.href = '/login';
   };
 
   return (
@@ -175,14 +200,17 @@ const Dashboard = () => {
         </div>
 
         {/* Add Task Button */}
-        <Button 
-          onClick={handleAddTask}
-          className="w-full h-14 text-base font-semibold shadow-glow"
-          size="lg"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Adicionar Nova Tarefa
-        </Button>
+        <Dialog open={showTaskForm} onOpenChange={setShowTaskForm}>
+          <DialogTrigger asChild>
+            <Button className="w-full h-14 text-base font-semibold shadow-glow" size="lg">
+              <Plus className="w-5 h-5 mr-2" />
+              Adicionar Nova Tarefa
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <TaskForm onClose={() => setShowTaskForm(false)} />
+          </DialogContent>
+        </Dialog>
 
         {/* Tasks List */}
         <div className="space-y-4">
@@ -204,9 +232,33 @@ const Dashboard = () => {
           </div>
 
           <div className="space-y-3">
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
+            {isLoading ? (
+              <div className="text-center py-8">
+                <Clock className="w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground">Carregando tarefas...</p>
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Nenhuma tarefa encontrada</h3>
+                <p className="text-muted-foreground mb-4">Comece criando sua primeira tarefa!</p>
+                <Dialog open={showTaskForm} onOpenChange={setShowTaskForm}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Criar primeira tarefa
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <TaskForm onClose={() => setShowTaskForm(false)} />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ) : (
+              tasks.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))
+            )}
           </div>
         </div>
       </div>
